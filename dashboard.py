@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from datetime import datetime
+import warnings
+warnings.filterwarnings('ignore')
 
 # Configuration de la page
 st.set_page_config(
@@ -14,566 +16,597 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Style CSS personnalisé avancé
+# Style CSS adapté aux exigences académiques
 st.markdown("""
 <style>
-    .main-header {
-        font-size: 2.8rem;
+    .main-title {
+        font-size: 2.5rem;
         color: #2E8B57;
         text-align: center;
-        margin-bottom: 1rem;
+        margin-bottom: 2rem;
         font-weight: bold;
+        border-bottom: 3px solid #2E8B57;
+        padding-bottom: 1rem;
     }
     .section-header {
         color: #2E8B57;
-        border-bottom: 3px solid #2E8B57;
-        padding-bottom: 0.5rem;
-        margin-top: 2rem;
+        border-left: 4px solid #2E8B57;
+        padding-left: 1rem;
+        margin: 2rem 0 1rem 0;
         font-size: 1.5rem;
         font-weight: bold;
     }
     .kpi-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #f8f9fa;
         padding: 1.5rem;
-        border-radius: 15px;
+        border-radius: 10px;
         text-align: center;
         margin: 0.5rem;
-        color: white;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 2px solid #2E8B57;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .metric-value {
         font-size: 2rem;
         font-weight: bold;
         margin-bottom: 0.5rem;
+        color: #2E8B57;
     }
     .metric-label {
         font-size: 1rem;
-        opacity: 0.9;
+        color: #555;
     }
-    .warning-box {
-        background-color: #fff3cd;
-        border: 1px solid #ffeaa7;
-        border-radius: 10px;
+    .recommendation-box {
+        background-color: #e8f5e8;
+        border: 1px solid #2E8B57;
+        border-radius: 8px;
         padding: 1rem;
         margin: 1rem 0;
     }
-    .success-box {
-        background-color: #d1ecf1;
-        border: 1px solid #bee5eb;
-        border-radius: 10px;
+    .critical-box {
+        background-color: #ffe8e8;
+        border: 1px solid #dc3545;
+        border-radius: 8px;
         padding: 1rem;
         margin: 1rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
 
-class AdvancedEnvironmentalDashboard:
+class EnvironmentalDashboard:
     def __init__(self):
         self.load_data()
     
     def load_data(self):
-        """Charge les données préparées"""
+        """Charge les données avec gestion d'erreur"""
         try:
             self.df_recycling = pd.read_csv("../data/recycling_clean.csv")
             self.df_waste = pd.read_csv("../data/waste_clean.csv")
             st.sidebar.success("✅ Données chargées avec succès")
         except FileNotFoundError:
-            st.error("❌ Fichiers de données non trouvés. Exécutez d'abord data_prep.py")
-            st.stop()
+            st.warning("📊 Génération de données de démonstration pour la présentation")
+            self.generate_demo_data()
     
-    def calculate_advanced_kpis(self):
-        """Calcule des indicateurs avancés avec analyses critiques"""
+    def generate_demo_data(self):
+        """Génère des données de démonstration réalistes"""
+        np.random.seed(42)
+        
+        countries = ['France', 'Allemagne', 'Italie', 'Espagne', 'Royaume-Uni', 
+                    'Pays-Bas', 'Belgique', 'Suisse', 'Suède', 'Norvège',
+                    'Pologne', 'Autriche', 'Portugal', 'Danemark', 'Finlande']
+        
+        years = list(range(2000, 2021))
+        recycling_data = []
+        waste_data = []
+        
+        for country in countries:
+            base_rate = np.random.normal(40, 12)
+            base_waste = np.random.normal(500, 150)
+            
+            for year in years:
+                # Données recyclage
+                trend = (year - 2000) * 0.5
+                noise = np.random.normal(0, 2)
+                rate = max(5, min(80, base_rate + trend + noise))
+                
+                recycling_data.append({
+                    'Country': country,
+                    'Code': country[:3].upper(),
+                    'Year': year,
+                    'RecyclingRate': round(rate, 1)
+                })
+                
+                # Données déchets
+                waste_trend = (year - 2000) * 10
+                waste_noise = np.random.normal(0, 20)
+                total_waste = max(100, base_waste + waste_trend + waste_noise) * 1000000
+                
+                waste_data.append({
+                    'Entity': country,
+                    'Year': year,
+                    'TotalWaste': total_waste,
+                    'PlasticWaste': total_waste * 0.15,
+                    'OrganicWaste': total_waste * 0.40
+                })
+        
+        self.df_recycling = pd.DataFrame(recycling_data)
+        self.df_waste = pd.DataFrame(waste_data)
+    
+    def calculate_kpis(self):
+        """Calcule les indicateurs clés selon la Phase 2"""
         latest_year = self.df_recycling['Year'].max()
         latest_data = self.df_recycling[self.df_recycling['Year'] == latest_year]
         
-        # KPIs de base
+        # KPI 1-5 : Indicateurs de base
         avg_recycling = latest_data['RecyclingRate'].mean()
         best_country = latest_data.loc[latest_data['RecyclingRate'].idxmax()]
         worst_country = latest_data.loc[latest_data['RecyclingRate'].idxmin()]
         
-        # Analyses avancées
+        # KPI 6-8 : Indicateurs avancés
         countries_above_50 = len(latest_data[latest_data['RecyclingRate'] > 50])
         countries_below_20 = len(latest_data[latest_data['RecyclingRate'] < 20])
         
-        # Tendances temporelles
+        # Tendances
         trend_data = self.df_recycling.groupby('Year')['RecyclingRate'].mean().reset_index()
         trend_slope = np.polyfit(trend_data['Year'], trend_data['RecyclingRate'], 1)[0]
         
-        # Zones critiques
-        critical_zones = latest_data[latest_data['RecyclingRate'] < 15]
-        
         kpis = {
-            # Indicateurs de base
+            # KPI de performance
             'avg_recycling': avg_recycling,
             'best_country': best_country['Country'],
             'best_rate': best_country['RecyclingRate'],
             'worst_country': worst_country['Country'],
             'worst_rate': worst_country['RecyclingRate'],
-            'total_countries': latest_data['Country'].nunique(),
             
-            # Analyses critiques
+            # KPI de distribution
             'countries_above_50': countries_above_50,
             'countries_below_20': countries_below_20,
-            'trend_slope': trend_slope,
-            'critical_zones_count': len(critical_zones),
-            'critical_zones': critical_zones,
+            'total_countries': latest_data['Country'].nunique(),
             
-            # Données déchets
+            # KPI de tendance
+            'trend_slope': trend_slope,
+            
+            # Métadonnées
+            'latest_year': latest_year,
             'has_waste_data': len(self.df_waste) > 0
         }
         
-        if kpis['has_waste_data']:
-            latest_waste = self.df_waste[self.df_waste['Year'] == self.df_waste['Year'].max()]
-            kpis.update({
-                'total_waste': latest_waste['TotalWaste'].sum(),
-                'max_waste': latest_waste['TotalWaste'].max(),
-                'top_waste_producer': latest_waste.loc[latest_waste['TotalWaste'].idxmax()]['Entity']
-            })
-        
         return kpis
     
-    def display_advanced_kpi_dashboard(self, kpis):
-        """Affiche un tableau de bord KPI avancé"""
-        st.markdown('<div class="main-header">📊 TABLEAU DE BORD ENVIRONNEMENTAL AVANCÉ</div>', unsafe_allow_html=True)
+    def display_kpi_dashboard(self, kpis):
+        """Affiche le tableau de bord KPI selon Phase 3"""
+        st.markdown('<div class="main-title">DASHBOARD ENVIRONNEMENTAL - GESTION DES DÉCHETS</div>', unsafe_allow_html=True)
         
-        # Première ligne de KPIs
+        # Ligne 1 : KPI principaux
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             st.markdown(f"""
             <div class="kpi-card">
                 <div class="metric-value">{kpis['avg_recycling']:.1f}%</div>
-                <div class="metric-label">♻️ Taux Recyclage Moyen</div>
+                <div class="metric-label">Taux de Recyclage Moyen</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col2:
-            trend_icon = "📈" if kpis['trend_slope'] > 0 else "📉"
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="metric-value">{trend_icon} {kpis['trend_slope']:.3f}</div>
-                <div class="metric-label">Tendance Annuelle</div>
+                <div class="metric-value">{kpis['best_rate']:.1f}%</div>
+                <div class="metric-label">Meilleur: {kpis['best_country']}</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col3:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="metric-value">{kpis['countries_above_50']}</div>
-                <div class="metric-label">✅ Pays > 50%</div>
+                <div class="metric-value">{kpis['worst_rate']:.1f}%</div>
+                <div class="metric-label">Plus faible: {kpis['worst_country']}</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col4:
+            trend_icon = "📈" if kpis['trend_slope'] > 0 else "📉"
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="metric-value">{kpis['countries_below_20']}</div>
-                <div class="metric-label">⚠️ Pays < 20%</div>
+                <div class="metric-value">{trend_icon}</div>
+                <div class="metric-label">Tendance: {kpis['trend_slope']:.3f}/an</div>
             </div>
             """, unsafe_allow_html=True)
         
-        # Deuxième ligne de KPIs
+        # Ligne 2 : KPI secondaires
         col5, col6, col7, col8 = st.columns(4)
         
         with col5:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="metric-value">{kpis['best_rate']:.1f}%</div>
-                <div class="metric-label">🥇 {kpis['best_country']}</div>
+                <div class="metric-value">{kpis['countries_above_50']}</div>
+                <div class="metric-label">Pays > 50% recyclage</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col6:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="metric-value">{kpis['worst_rate']:.1f}%</div>
-                <div class="metric-label">🔻 {kpis['worst_country']}</div>
+                <div class="metric-value">{kpis['countries_below_20']}</div>
+                <div class="metric-label">Pays < 20% recyclage</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col7:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="metric-value">{kpis['critical_zones_count']}</div>
-                <div class="metric-label">🚨 Zones Critiques</div>
+                <div class="metric-value">{kpis['total_countries']}</div>
+                <div class="metric-label">Pays analysés</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col8:
-            if kpis['has_waste_data']:
-                waste_display = f"{kpis['total_waste']:,.0f}"
-            else:
-                waste_display = "N/A"
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="metric-value">{waste_display}</div>
-                <div class="metric-label">🗑️ Total Déchets</div>
+                <div class="metric-value">{kpis['latest_year']}</div>
+                <div class="metric-label">Année de référence</div>
             </div>
             """, unsafe_allow_html=True)
     
-    def create_interactive_controls(self):
-        """Crée des contrôles interactifs avancés"""
-        st.sidebar.markdown("---")
-        st.sidebar.markdown("### 🎛️ CONTROLES INTERACTIFS")
+    def create_visualizations(self):
+        """Crée les visualisations selon la Phase 2"""
+        st.markdown('<div class="section-header">VISUALISATIONS DES DONNÉES ENVIRONNEMENTALES</div>', unsafe_allow_html=True)
         
-        # Filtre par année
+        # Contrôles interactifs
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### 🎛️ FILTRES INTERACTIFS")
+        
         years = sorted(self.df_recycling['Year'].unique())
         selected_year = st.sidebar.selectbox(
-            "📅 Sélectionner l'année:",
+            "Sélectionner l'année:",
             options=years,
             index=len(years)-1
         )
         
-        # Filtre par pays
         countries = sorted(self.df_recycling['Country'].unique())
         selected_countries = st.sidebar.multiselect(
-            "🌍 Filtrer par pays:",
+            "Sélectionner les pays:",
             options=countries,
-            default=countries[:5] if len(countries) > 5 else countries
+            default=countries[:8]
         )
         
-        # Seuil de performance
-        recycling_threshold = st.sidebar.slider(
-            "🎯 Seuil de performance (%):",
-            min_value=0,
-            max_value=100,
-            value=30
-        )
-        
-        return {
-            'year': selected_year,
-            'countries': selected_countries,
-            'threshold': recycling_threshold
-        }
-    
-    def create_advanced_recycling_analysis(self, filters):
-        """Analyse avancée du recyclage avec visualisations interactives"""
-        st.markdown('<div class="section-header">📈 ANALYSE AVANCÉE DU RECYCLAGE</div>', unsafe_allow_html=True)
-        
-        # Données filtrées
-        filtered_data = self.df_recycling[
-            (self.df_recycling['Year'] == filters['year']) & 
-            (self.df_recycling['Country'].isin(filters['countries']))
-        ]
-        
-        # Layout en onglets pour une organisation avancée
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "🏆 Performance par Pays", 
-            "📊 Analyse Temporelle", 
-            "🗺️ Analyse Spatiale", 
-            "🔍 Analyse Comparative"
+        # Onglets pour organiser les visualisations
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            "📈 Évolution Temporelle", 
+            "📊 Comparaison par Pays", 
+            "🗺️ Répartition Spatiale", 
+            "🔍 Composition et Corrélations",
+            "📋 Analyse des Tendances"
         ])
         
         with tab1:
-            self._create_performance_analysis(filtered_data, filters)
+            self._create_temporal_visualizations(selected_year, selected_countries)
         
         with tab2:
-            self._create_temporal_analysis(filters)
+            self._create_comparison_visualizations(selected_year, selected_countries)
         
         with tab3:
-            self._create_spatial_analysis(filters)
+            self._create_spatial_visualizations(selected_year)
         
         with tab4:
-            self._create_comparative_analysis(filters)
+            self._create_composition_correlation_visualizations(selected_year)
+        
+        with tab5:
+            self._create_trend_analysis_visualizations(selected_countries)
     
-    def _create_performance_analysis(self, data, filters):
-        """Analyse de performance avec indicateurs critiques"""
+    def _create_temporal_visualizations(self, year, countries):
+        """Visualisations d'évolution temporelle - Courbes et lignes"""
+        st.markdown("#### ÉVOLUTION TEMPORELLE DES TAUX DE RECYCLAGE")
+        
         col1, col2 = st.columns(2)
         
         with col1:
-            # Graphique de performance avec seuil
-            fig = px.bar(data.nlargest(15, 'RecyclingRate'), 
-                        x='RecyclingRate', y='Country', orientation='h',
-                        title=f'Top 15 Pays - {filters["year"]}',
-                        color='RecyclingRate',
-                        color_continuous_scale='Viridis')
-            
-            # Ajouter une ligne pour le seuil
-            fig.add_vline(x=filters['threshold'], line_dash="dash", line_color="red",
-                         annotation_text=f"Seuil: {filters['threshold']}%")
-            
-            st.plotly_chart(fig, use_container_width=True)
+            # Évolution globale
+            global_trend = self.df_recycling.groupby('Year')['RecyclingRate'].mean().reset_index()
+            fig_global = px.line(global_trend, x='Year', y='RecyclingRate',
+                               title='Évolution du Taux de Recyclage Mondial (Moyenne)',
+                               markers=True)
+            fig_global.update_layout(yaxis_title="Taux de Recyclage (%)")
+            st.plotly_chart(fig_global, use_container_width=True)
         
         with col2:
-            # Analyse des zones critiques
-            critical_data = data[data['RecyclingRate'] < filters['threshold']]
-            
-            if len(critical_data) > 0:
-                st.markdown("#### 🚨 Zones Requérant une Attention")
-                fig_critical = px.bar(critical_data, x='RecyclingRate', y='Country', orientation='h',
-                                     title=f'Pays en Dessous du Seuil ({filters["threshold"]}%)',
-                                     color='RecyclingRate', color_continuous_scale='Reds')
-                st.plotly_chart(fig_critical, use_container_width=True)
-            else:
-                st.success("🎉 Tous les pays sélectionnés dépassent le seuil de performance !")
-    
-    def _create_temporal_analysis(self, filters):
-        """Analyse temporelle avancée"""
-        col1, col2 = st.columns(2)
-        
-        with col1:
             # Évolution des pays sélectionnés
-            selected_countries_data = self.df_recycling[
-                self.df_recycling['Country'].isin(filters['countries'])
-            ]
-            
-            fig = px.line(selected_countries_data, x='Year', y='RecyclingRate', 
-                         color='Country', title='Évolution par Pays',
-                         markers=True)
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
-            # Tendance mondiale avec intervalle de confiance
-            global_trend = self.df_recycling.groupby('Year').agg({
-                'RecyclingRate': ['mean', 'std', 'min', 'max']
-            }).reset_index()
-            global_trend.columns = ['Year', 'mean', 'std', 'min', 'max']
-            
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=global_trend['Year'], y=global_trend['mean'],
-                                   mode='lines', name='Moyenne', line=dict(color='blue')))
-            fig.add_trace(go.Scatter(x=global_trend['Year'], 
-                                   y=global_trend['mean'] + global_trend['std'],
-                                   mode='lines', name='+1σ', line=dict(dash='dash', color='gray')))
-            fig.add_trace(go.Scatter(x=global_trend['Year'], 
-                                   y=global_trend['mean'] - global_trend['std'],
-                                   mode='lines', name='-1σ', line=dict(dash='dash', color='gray')))
-            
-            fig.update_layout(title='Tendance Mondiale avec Variabilité')
-            st.plotly_chart(fig, use_container_width=True)
+            if countries:
+                country_data = self.df_recycling[self.df_recycling['Country'].isin(countries)]
+                fig_countries = px.line(country_data, x='Year', y='RecyclingRate', color='Country',
+                                      title='Évolution par Pays Sélectionné',
+                                      markers=True)
+                fig_countries.update_layout(yaxis_title="Taux de Recyclage (%)")
+                st.plotly_chart(fig_countries, use_container_width=True)
+            else:
+                st.info("Sélectionnez des pays pour voir leur évolution")
     
-    def _create_spatial_analysis(self, filters):
-        """Analyse spatiale avec carte interactive"""
-        latest_data = self.df_recycling[self.df_recycling['Year'] == filters['year']]
+    def _create_comparison_visualizations(self, year, countries):
+        """Visualisations de comparaison - Diagrammes en barres"""
+        st.markdown("#### COMPARAISON DES PERFORMANCES PAR PAYS")
         
-        fig = px.choropleth(latest_data, locations="Code", color="RecyclingRate",
-                           hover_name="Country", 
-                           hover_data={"RecyclingRate": ":.1f%", "Code": False},
-                           title=f"Carte Mondiale du Recyclage - {filters['year']}",
-                           color_continuous_scale="Viridis",
-                           range_color=[0, 60])
-        
-        st.plotly_chart(fig, use_container_width=True)
-    
-    def _create_comparative_analysis(self, filters):
-        """Analyse comparative avancée"""
         col1, col2 = st.columns(2)
         
         with col1:
-            # Distribution des performances
-            latest_data = self.df_recycling[self.df_recycling['Year'] == filters['year']]
-            fig = px.histogram(latest_data, x='RecyclingRate', 
-                              title='Distribution des Taux de Recyclage',
-                              nbins=20, color_discrete_sequence=['#2E8B57'])
-            fig.add_vline(x=latest_data['RecyclingRate'].mean(), line_dash="dash", 
-                         line_color="red", annotation_text="Moyenne")
-            st.plotly_chart(fig, use_container_width=True)
+            # Top 10 pays
+            year_data = self.df_recycling[self.df_recycling['Year'] == year]
+            top_countries = year_data.nlargest(10, 'RecyclingRate')
+            
+            fig_top = px.bar(top_countries, x='RecyclingRate', y='Country', orientation='h',
+                           title=f'Top 10 Pays - Taux de Recyclage {year}',
+                           color='RecyclingRate',
+                           color_continuous_scale='Viridis')
+            fig_top.update_layout(xaxis_title="Taux de Recyclage (%)", yaxis_title="Pays")
+            st.plotly_chart(fig_top, use_container_width=True)
         
         with col2:
-            # Box plot par décennie
-            self.df_recycling['Decade'] = (self.df_recycling['Year'] // 10) * 10
-            fig = px.box(self.df_recycling, x='Decade', y='RecyclingRate',
-                        title='Évolution par Décennie')
-            st.plotly_chart(fig, use_container_width=True)
+            # Comparaison des pays sélectionnés
+            if countries:
+                selected_data = year_data[year_data['Country'].isin(countries)]
+                fig_comparison = px.bar(selected_data, x='Country', y='RecyclingRate',
+                                      title=f'Comparaison des Pays Sélectionnés - {year}',
+                                      color='RecyclingRate',
+                                      color_continuous_scale='Viridis')
+                fig_comparison.update_layout(yaxis_title="Taux de Recyclage (%)")
+                st.plotly_chart(fig_comparison, use_container_width=True)
+            else:
+                st.info("Sélectionnez des pays pour les comparer")
     
-    def create_waste_analysis(self, kpis):
-        """Analyse avancée des déchets"""
-        if not kpis['has_waste_data']:
-            st.warning("📝 Les données déchets ne sont pas disponibles pour une analyse approfondie.")
-            return
+    def _create_spatial_visualizations(self, year):
+        """Visualisations de répartition spatiale - Carte choroplèthe"""
+        st.markdown("#### RÉPARTITION SPATIALE DU RECYCLAGE")
         
-        st.markdown('<div class="section-header">🗑️ ANALYSE AVANCÉE DES DÉCHETS</div>', unsafe_allow_html=True)
+        year_data = self.df_recycling[self.df_recycling['Year'] == year]
         
-        tab1, tab2, tab3 = st.tabs(["Production", "Tendances", "Corrélations"])
+        fig_map = px.choropleth(year_data, 
+                              locations="Code", 
+                              color="RecyclingRate",
+                              hover_name="Country", 
+                              hover_data={"RecyclingRate": ":.1f%", "Code": False},
+                              title=f"Carte Mondiale du Taux de Recyclage - {year}",
+                              color_continuous_scale="Viridis",
+                              range_color=[0, 80])
         
-        with tab1:
-            self._create_waste_production_analysis()
-        
-        with tab2:
-            self._create_waste_trends_analysis()
-        
-        with tab3:
-            self._create_waste_correlation_analysis()
+        fig_map.update_layout(geo=dict(showframe=False, showcoastlines=True))
+        st.plotly_chart(fig_map, use_container_width=True)
     
-    def _create_waste_production_analysis(self):
-        """Analyse de la production de déchets"""
+    def _create_composition_correlation_visualizations(self, year):
+        """Visualisations de composition et corrélations"""
+        st.markdown("#### COMPOSITION ET CORRÉLATIONS")
+        
         col1, col2 = st.columns(2)
         
         with col1:
-            latest_year = self.df_waste['Year'].max()
-            latest_waste = self.df_waste[self.df_waste['Year'] == latest_year]
+            # Diagramme circulaire - Répartition par performance
+            year_data = self.df_recycling[self.df_recycling['Year'] == year]
+            year_data['PerformanceCategory'] = pd.cut(year_data['RecyclingRate'],
+                                                    bins=[0, 20, 40, 60, 80, 100],
+                                                    labels=['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'])
             
-            fig = px.treemap(latest_waste, path=['Entity'], values='TotalWaste',
-                            title=f'Répartition des Déchets par Pays - {latest_year}',
-                            color='TotalWaste', color_continuous_scale='Reds')
-            st.plotly_chart(fig, use_container_width=True)
+            performance_dist = year_data['PerformanceCategory'].value_counts()
+            fig_pie = px.pie(values=performance_dist.values, 
+                           names=performance_dist.index,
+                           title=f"Répartition des Pays par Niveau de Performance - {year}")
+            st.plotly_chart(fig_pie, use_container_width=True)
         
         with col2:
-            # Top producteurs
-            top_producers = latest_waste.nlargest(10, 'TotalWaste')
-            fig = px.bar(top_producers, x='TotalWaste', y='Entity', orientation='h',
-                        title='Top 10 Producteurs de Déchets',
-                        color='TotalWaste', color_continuous_scale='Reds')
-            st.plotly_chart(fig, use_container_width=True)
+            # Analyse de corrélation avec données déchets (si disponibles)
+            if len(self.df_waste) > 0:
+                # Fusion des données
+                merged_data = pd.merge(self.df_recycling, self.df_waste, 
+                                     left_on=['Country', 'Year'], 
+                                     right_on=['Entity', 'Year'], 
+                                     how='inner')
+                
+                if len(merged_data) > 0:
+                    latest_merged = merged_data[merged_data['Year'] == year]
+                    fig_scatter = px.scatter(latest_merged, x='TotalWaste', y='RecyclingRate',
+                                           hover_name='Country',
+                                           title=f'Corrélation: Déchets vs Recyclage - {year}',
+                                           trendline="ols")
+                    fig_scatter.update_layout(xaxis_title="Volume Total de Déchets",
+                                            yaxis_title="Taux de Recyclage (%)")
+                    st.plotly_chart(fig_scatter, use_container_width=True)
+                else:
+                    st.info("Données insuffisantes pour l'analyse de corrélation")
+            else:
+                st.info("Données déchets non disponibles pour l'analyse de corrélation")
     
-    def _create_waste_trends_analysis(self):
-        """Analyse des tendances des déchets"""
-        waste_trend = self.df_waste.groupby('Year')['TotalWaste'].sum().reset_index()
+    def _create_trend_analysis_visualizations(self, countries):
+        """Analyse avancée des tendances"""
+        st.markdown("#### ANALYSE DES TENDANCES")
         
-        fig = px.line(waste_trend, x='Year', y='TotalWaste',
-                     title='Évolution de la Production Totale de Déchets',
-                     markers=True)
+        col1, col2 = st.columns(2)
         
-        # Ajouter une tendance linéaire
-        z = np.polyfit(waste_trend['Year'], waste_trend['TotalWaste'], 1)
-        p = np.poly1d(z)
-        fig.add_trace(go.Scatter(x=waste_trend['Year'], y=p(waste_trend['Year']),
-                               mode='lines', name='Tendance', line=dict(dash='dash')))
+        with col1:
+            # Box plot par période
+            self.df_recycling['Période'] = pd.cut(self.df_recycling['Year'],
+                                                bins=[1999, 2005, 2010, 2015, 2020],
+                                                labels=['2000-2005', '2006-2010', '2011-2015', '2016-2020'])
+            
+            fig_box = px.box(self.df_recycling, x='Période', y='RecyclingRate',
+                           title='Distribution des Taux de Recyclage par Période')
+            fig_box.update_layout(yaxis_title="Taux de Recyclage (%)")
+            st.plotly_chart(fig_box, use_container_width=True)
         
-        st.plotly_chart(fig, use_container_width=True)
+        with col2:
+            # Heatmap des performances
+            if countries:
+                pivot_data = self.df_recycling[self.df_recycling['Country'].isin(countries)]
+                pivot_table = pivot_data.pivot_table(values='RecyclingRate', 
+                                                   index='Country', 
+                                                   columns='Year', 
+                                                   aggfunc='mean')
+                
+                fig_heatmap = px.imshow(pivot_table, aspect="auto",
+                                      title='Heatmap des Performances par Pays et Année',
+                                      color_continuous_scale="Viridis")
+                st.plotly_chart(fig_heatmap, use_container_width=True)
+            else:
+                st.info("Sélectionnez des pays pour la heatmap")
     
-    def _create_waste_correlation_analysis(self):
-        """Analyse de corrélation déchets-recyclage"""
-        # Fusionner les données pour analyse de corrélation
-        common_year = min(self.df_recycling['Year'].max(), self.df_waste['Year'].max())
+    def generate_interpretation_recommendations(self, kpis):
+        """Phase 4 - Interprétation et recommandations"""
+        st.markdown('<div class="section-header">INTERPRÉTATION ET RECOMMANDATIONS</div>', unsafe_allow_html=True)
         
-        df_recent_recycling = self.df_recycling[self.df_recycling['Year'] == common_year]
-        df_recent_waste = self.df_waste[self.df_waste['Year'] == common_year]
+        # Analyse des tendances principales
+        st.markdown("### 📈 ANALYSE DES TENDANCES PRINCIPALES")
         
-        df_merged = pd.merge(df_recent_recycling, df_recent_waste, 
-                            left_on='Country', right_on='Entity', how='inner')
+        col1, col2 = st.columns(2)
         
-        if len(df_merged) > 0:
-            fig = px.scatter(df_merged, x='TotalWaste', y='RecyclingRate',
-                            hover_name='Country', size='TotalWaste',
-                            title='Corrélation: Production de Déchets vs Taux de Recyclage',
-                            trendline="ols",
-                            labels={'TotalWaste': 'Volume Déchets', 
-                                   'RecyclingRate': 'Taux Recyclage (%)'})
+        with col1:
+            st.markdown("#### Tendances Positives")
+            positive_trends = []
             
-            # Calcul du coefficient de corrélation
-            correlation = df_merged['TotalWaste'].corr(df_merged['RecyclingRate'])
-            fig.add_annotation(text=f"Corrélation: {correlation:.2f}",
-                             xref="paper", yref="paper", x=0.05, y=0.95,
-                             showarrow=False, bgcolor="white")
+            if kpis['trend_slope'] > 0:
+                positive_trends.append(f"• Tendance mondiale positive : **+{kpis['trend_slope']:.3f}%** par an")
+            if kpis['countries_above_50'] > kpis['total_countries'] * 0.3:
+                positive_trends.append(f"• **{kpis['countries_above_50']} pays** dépassent 50% de recyclage")
+            if kpis['avg_recycling'] > 30:
+                positive_trends.append(f"• Performance moyenne **au-dessus de 30%**")
             
-            st.plotly_chart(fig, use_container_width=True)
+            if positive_trends:
+                for trend in positive_trends:
+                    st.markdown(trend)
+            else:
+                st.markdown("• Aucune tendance positive significative détectée")
+        
+        with col2:
+            st.markdown("#### Tendances Préoccupantes")
+            concerns = []
+            
+            if kpis['countries_below_20'] > 0:
+                concerns.append(f"• **{kpis['countries_below_20']} pays** en dessous de 20% de recyclage")
+            if kpis['avg_recycling'] < 40:
+                concerns.append(f"• Performance moyenne **inférieure aux objectifs internationaux**")
+            if kpis['trend_slope'] < 0:
+                concerns.append(f"• Tendance mondiale **négative**")
+            
+            if concerns:
+                for concern in concerns:
+                    st.markdown(concern)
+            else:
+                st.markdown("• Aucun problème majeur détecté")
+        
+        # Identification des zones critiques
+        st.markdown("### 🚨 IDENTIFICATION DES ZONES CRITIQUES")
+        
+        latest_data = self.df_recycling[self.df_recycling['Year'] == kpis['latest_year']]
+        critical_zones = latest_data[latest_data['RecyclingRate'] < 20]
+        
+        if len(critical_zones) > 0:
+            st.markdown(f"**Pays avec taux de recyclage critique (< 20%) :**")
+            for _, country in critical_zones.iterrows():
+                st.markdown(f"• **{country['Country']}** : {country['RecyclingRate']}%")
+            
+            st.markdown("""
+            <div class="critical-box">
+                <strong>Attention requise :</strong> Ces pays nécessitent une intervention urgente 
+                pour améliorer leurs infrastructures de recyclage et leurs politiques environnementales.
+            </div>
+            """, unsafe_allow_html=True)
         else:
-            st.info("ℹ️ Pas assez de données communes pour l'analyse de corrélation.")
-    
-    def generate_recommendations(self, kpis):
-        """Génère des recommandations environnementales basées sur les données"""
-        st.markdown('<div class="section-header">💡 RECOMMANDATIONS ENVIRONNEMENTALES</div>', unsafe_allow_html=True)
+            st.success("✅ Aucune zone critique identifiée (tous les pays > 20%)")
+        
+        # Recommandations environnementales
+        st.markdown("### 💡 RECOMMANDATIONS ENVIRONNEMENTALES")
         
         recommendations = []
         
-        # Recommandations basées sur l'analyse des données
-        if kpis['avg_recycling'] < 30:
+        # Recommandation 1 : Performance moyenne
+        if kpis['avg_recycling'] < 35:
             recommendations.append({
-                "type": "🚨 Priorité Élevée",
-                "title": "Augmentation Urgente du Recyclage",
-                "description": f"Avec un taux moyen de {kpis['avg_recycling']:.1f}%, des actions immédiates sont nécessaires pour atteindre les objectifs environnementaux.",
-                "actions": [
-                    "Développer des infrastructures de tri",
-                    "Sensibiliser le public au recyclage",
-                    "Mettre en place des incitations fiscales"
-                ]
+                "titre": "Amélioration des Infrastructures",
+                "description": "Investir dans des centres de tri modernes et des systèmes de collecte sélective",
+                "priorité": "Élevée"
             })
         
-        if kpis['critical_zones_count'] > 0:
+        # Recommandation 2 : Zones critiques
+        if len(critical_zones) > 0:
             recommendations.append({
-                "type": "🎯 Ciblage Stratégique",
-                "title": "Intervention dans les Zones Critiques",
-                "description": f"{kpis['critical_zones_count']} pays ont des taux de recyclage très bas nécessitant un support spécifique.",
-                "actions": [
-                    "Programmes d'aide internationale",
-                    "Transfert de technologies vertes",
-                    "Formation des collectivités locales"
-                ]
+                "titre": "Programmes d'Aide Internationale",
+                "description": "Développer des partenariats avec les pays en difficulté pour transférer technologies et bonnes pratiques",
+                "priorité": "Élevée"
             })
         
-        if kpis['trend_slope'] > 0:
+        # Recommandation 3 : Tendances
+        if kpis['trend_slope'] > 0.5:
             recommendations.append({
-                "type": "✅ Bonnes Pratiques",
-                "title": "Capitaliser sur la Tendance Positive",
-                "description": f"La tendance annuelle de +{kpis['trend_slope']:.3f} montre une amélioration continue à renforcer.",
-                "actions": [
-                    "Étudier les politiques des pays performants",
-                    "Renforcer les réglementations",
-                    "Promouvoir les succès existants"
-                ]
+                "titre": "Capitaliser sur la Dynamique Positive",
+                "description": "Renforcer les politiques qui fonctionnent et les étendre à d'autres régions",
+                "priorité": "Moyenne"
             })
+        elif kpis['trend_slope'] < 0:
+            recommendations.append({
+                "titre": "Revue des Politiques Environnementales",
+                "description": "Analyser les causes de la baisse et ajuster les stratégies",
+                "priorité": "Élevée"
+            })
+        
+        # Recommandation générale
+        recommendations.append({
+            "titre": "Sensibilisation et Éducation",
+            "description": "Développer des campagnes de sensibilisation sur l'importance du recyclage",
+            "priorité": "Moyenne"
+        })
         
         # Affichage des recommandations
         for i, rec in enumerate(recommendations, 1):
-            with st.expander(f"{rec['type']} - {rec['title']}"):
-                st.write(rec['description'])
-                st.markdown("**Actions recommandées:**")
-                for action in rec['actions']:
-                    st.markdown(f"- {action}")
+            priority_color = "🔴" if rec["priorité"] == "Élevée" else "🟡" if rec["priorité"] == "Moyenne" else "🟢"
+            
+            st.markdown(f"""
+            <div class="recommendation-box">
+                <strong>Recommandation {i} : {rec['titre']}</strong> {priority_color}<br>
+                {rec['description']}<br>
+                <em>Priorité : {rec['priorité']}</em>
+            </div>
+            """, unsafe_allow_html=True)
         
-        # Résumé exécutif
-        st.markdown("---")
-        st.markdown("#### 📋 RÉSUMÉ EXÉCUTIF")
+        # Synthèse pour la soutenance
+        st.markdown("### 📋 SYNTHÈSE POUR SOUTENANCE")
         
-        col1, col2 = st.columns(2)
+        st.markdown(f"""
+        **Points clés à présenter :**
         
-        with col1:
-            st.metric("Performance Moyenne", f"{kpis['avg_recycling']:.1f}%")
-            st.metric("Pays Performants", kpis['countries_above_50'])
-            st.metric("Tendance", "📈 Positive" if kpis['trend_slope'] > 0 else "📉 Négative")
+        1. **Performance globale** : Taux de recyclage moyen de **{kpis['avg_recycling']:.1f}%**
+        2. **Dynamique** : Tendance {'**positive**' if kpis['trend_slope'] > 0 else '**négative**'} 
+        3. **Répartition** : **{kpis['countries_above_50']} pays performants** vs **{kpis['countries_below_20']} pays en difficulté**
+        4. **Recommandations prioritaires** : {len([r for r in recommendations if r['priorité'] == 'Élevée'])} actions urgentes
         
-        with col2:
-            st.metric("Zones Critiques", kpis['critical_zones_count'])
-            st.metric("Pays à Risque", kpis['countries_below_20'])
-            st.metric("Potentiel d'Amélioration", f"{(60 - kpis['avg_recycling']):.1f}%")
+        **Message principal** : {'Des progrès significatifs mais des efforts restent nécessaires' if kpis['avg_recycling'] < 50 else 'Bonne performance globale à maintenir'}
+        """)
     
     def run(self):
-        """Exécute le dashboard avancé"""
-        # Calcul des KPIs avancés
-        kpis = self.calculate_advanced_kpis()
+        """Exécute le dashboard complet"""
+        # Calcul des KPIs
+        kpis = self.calculate_kpis()
         
-        # Contrôles interactifs
-        filters = self.create_interactive_controls()
+        # Navigation principale
+        st.sidebar.markdown("### 🧭 NAVIGATION PRINCIPALE")
+        page = st.sidebar.radio("", 
+                              ["🏠 Tableau de Bord", 
+                               "📊 Visualisations", 
+                               "📈 Analyse et Recommandations"])
         
-        # Navigation par sidebar
+        # Affichage des sections selon la navigation
+        if page == "🏠 Tableau de Bord":
+            self.display_kpi_dashboard(kpis)
+            
+        elif page == "📊 Visualisations":
+            self.create_visualizations()
+            
+        elif page == "📈 Analyse et Recommandations":
+            self.generate_interpretation_recommendations(kpis)
+        
+        # Footer académique
         st.sidebar.markdown("---")
-        st.sidebar.markdown("### 🧭 NAVIGATION")
-        section = st.sidebar.radio("Sélectionner une section:", 
-                                 ["Tableau de Bord", "Analyse Recyclage", "Analyse Déchets", 
-                                  "Recommandations", "Rapport Complet"])
-        
-        # Affichage des sections
-        if section == "Tableau de Bord":
-            self.display_advanced_kpi_dashboard(kpis)
-        
-        elif section == "Analyse Recyclage":
-            self.create_advanced_recycling_analysis(filters)
-        
-        elif section == "Analyse Déchets":
-            self.create_waste_analysis(kpis)
-        
-        elif section == "Recommandations":
-            self.generate_recommendations(kpis)
-        
-        elif section == "Rapport Complet":
-            self.display_advanced_kpi_dashboard(kpis)
-            self.create_advanced_recycling_analysis(filters)
-            self.create_waste_analysis(kpis)
-            self.generate_recommendations(kpis)
-        
-        # Footer avec informations
-        st.sidebar.markdown("---")
-        st.sidebar.markdown("### 📊 INFORMATIONS TECHNIQUES")
-        st.sidebar.info(f"""
-        **Source des données:** Open Data Environnemental
-        **Période analysée:** 1990-2015
-        **Pays couverts:** {kpis['total_countries']}
-        **Dernière mise à jour:** {datetime.now().strftime('%d/%m/%Y')}
-        **Outils:** Python, Streamlit, Plotly, Pandas
+        st.sidebar.markdown("""
+        **USTOMB/FMI/INF/ING4/SD/DataViz**  
+        **Enseignante : F.Guerroudji**  
+        **Dashboard Environnemental**  
+        *Phase 3 & 4 - Visualisation et Interprétation*
         """)
 
-# Lancement du dashboard
+# Lancement de l'application
 if __name__ == "__main__":
-    dashboard = AdvancedEnvironmentalDashboard()
+    dashboard = EnvironmentalDashboard()
     dashboard.run()
